@@ -66,7 +66,7 @@ class PointsController extends Controller
             $image = $request->file('image');
             $name_image = time() . "_point." . strtolower($image->getClientOriginalExtension());
 
-            // Use Storage facade for file handling
+            // Store image using Storage facade
             $image->storeAs('images', $name_image, 'public');
         } else {
             $name_image = null;
@@ -80,13 +80,13 @@ class PointsController extends Controller
             'image' => $name_image,
         ];
 
-        // Create data
-        try {
-            $this->points->create($data);
-            return redirect()->route('map')->with('success', 'Point has been added');
-        } catch (\Exception $e) {
+        //Create Data
+        if (!$this->points->create($data)) {
             return redirect()->route('map')->with('error', 'Point failed to add');
         }
+
+        //Redirect to Map
+        return redirect()->route('map')->with('success', 'Point has been added');
     }
 
     /**
@@ -114,7 +114,62 @@ class PointsController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        // You can implement this if needed.
+
+
+        //Validate request
+        $request->validate(
+            [
+                'name' => 'required|unique:points,name,' . $id,
+                'description' => 'required',
+                'geom_point' => 'required',
+                'image'=> 'nullable|mimes:jpeg,png,jpg,gif,svg|max:10000',
+            ],
+            [
+                'name.required' => 'Name is required',
+                'name.unique' => 'Name already exist',
+                'description.required' => 'Description is required',
+                'geom_point.required' => 'Geometry point is required',
+            ]
+        );
+
+        //Create Images directory if not exist
+        if (!is_dir(public_path('storage/images'))) {
+            mkdir(public_path('storage/images'), 0777, true);
+        }
+
+        //Get old image file
+        $old_image = $this->points->find($id)->image;
+
+        //Get image file
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $name_image = time() . "_point." . strtolower($image->getClientOriginalExtension());
+            $image->storeAs('images', $name_image, 'public');
+
+        // Delete old image file
+        if ($old_image != null) {
+            if (File::exists('./storage/images/' . $old_image)) {
+                unlink('./storage/images/' . $old_image);
+            }
+        }
+        } else {
+            $name_image = $old_image;
+        }
+
+        $data = [
+            'geom' => $request->geom_point,
+            'name' => $request->name,
+            'description' => $request->description,
+            'image' =>$name_image,
+        ];
+
+        //Create Data
+        if (!$this->points->find($id)->update($data)) {
+            return redirect()->route('map')->with('error', 'Point failed to update');
+        }
+
+        //Redirect to Map
+        return redirect()->route('map')->with('success', 'Point has been updated');
     }
 
     /**
