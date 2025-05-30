@@ -47,6 +47,7 @@ class PointsController extends Controller
                 'description' => 'required',
                 'geom_point' => 'required',
                 'image' => 'nullable|mimes:jpeg,png,jpg,gif,svg|max:2048',
+
             ],
             [
                 'name.required' => 'Name is required',
@@ -78,6 +79,7 @@ class PointsController extends Controller
             'name' => $request->name,
             'description' => $request->description,
             'image' => $name_image,
+            'user_id' => auth()->user()->id,
         ];
 
         //Create Data

@@ -262,7 +262,9 @@
                     "<button type='submit' class='btn btn-sm btn-danger' onclick='return confirm(`Tenan Meh Dihapus?`)'><i class='fa-solid fa-trash-can'></i></button>" +
                     "</form>" +
                     "</div>" +
-                    "</div>";
+                        "</div>" + "<br>" +
+                        "<p>Dibuat: " + feature.properties.user_created + "</p>";
+
                 layer.on({
                     click: function(e) {
                         point.bindPopup(popupContent);
@@ -314,7 +316,8 @@
                     "<button type='submit' class='btn btn-sm btn-danger' onclick='return confirm(`Tenan Meh Dihapus?`)'><i class='fa-solid fa-trash-can'></i></button>" +
                     "</form>"+
                     "</div>" +
-                    "</div>";
+                        "</div>" + "<br>" +
+                        "<p>Dibuat: " + feature.properties.user_created + "</p>";
 
                 layer.on({
                     click: function(e) {
@@ -368,7 +371,8 @@
                     "<button type='submit' class='btn btn-sm btn-danger' onclick='return confirm(`Tenan Meh Dihapus?`)'><i class='fa-solid fa-trash-can'></i></button>" +
                     "</form>"+
                     "</div>" +
-                    "</div>";
+                        "</div>" + "<br>" +
+                        "<p>Dibuat: " + feature.properties.user_created + "</p>";
 
                 layer.on({
                     click: function(e) {
