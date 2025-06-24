@@ -20,10 +20,10 @@
 
 | Komponen     | Teknologi                       |
 |--------------|----------------------------------|
-| Backend      | Laravel 10.x                    |
+| Backend      | Laravel 11.x                    |
 | Frontend     | Blade, Bootstrap 5, Font Awesome|
 | Peta         | Leaflet.js                      |
-| Database     | MySQL / MariaDB                 |
+| Database     | DBeaver                 |
 | Storage      | Laravel Storage (public/images) |
 | Auth         | Laravel Breeze (opsional)       |
 
