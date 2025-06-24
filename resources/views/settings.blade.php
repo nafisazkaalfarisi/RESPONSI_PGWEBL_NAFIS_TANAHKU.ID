@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Pengaturan | Tanahku.id')
+
 @section('title', 'Pengaturan')
 
 @section('content')

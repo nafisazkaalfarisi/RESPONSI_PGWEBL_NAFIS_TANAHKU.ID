@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Tabel Data | Tanahku.id')
+
 @section('content')
     <div class="container mt-4">
 

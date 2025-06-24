@@ -1,3 +1,5 @@
+<?php $__env->startSection('title', 'Notifikasi | Tanahku.id'); ?>
+
 <?php $__env->startSection('content'); ?>
     <div class="container">
         <h4 class="mb-4">Notifikasi</h4>

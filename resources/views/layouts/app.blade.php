@@ -6,7 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Tanahku.id') }}</title>
+    <title>@yield('title', config('app.name', 'Tanahku.id'))</title>
+
+    <link rel="icon" href="{{ asset('images/tanahku.png') }}" type="image/png">
+
 
     <!-- Bootstrap & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -156,9 +159,11 @@
     {{-- Sidebar --}}
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header d-flex align-items-center justify-content-center">
-            <i class="fas fa-seedling me-2 logo-icon"></i>
-            <span class="logo-text">Tanahku.id</span>
-        </div>
+    <img src="{{ asset('images/tanahku.png') }}" alt="Tanahku.id Logo"
+         style="height: 48px; width: auto;" class="me-2">
+    <span class="logo-text">Tanahku.id</span>
+</div>
+
         <ul class="nav flex-column mt-3">
 
             {{-- === Navigasi Utama === --}}
@@ -239,6 +244,8 @@
             <span id="toggleIcon">«</span>
         </button>
     </div>
+
+
 
 
     {{-- Page Content --}}

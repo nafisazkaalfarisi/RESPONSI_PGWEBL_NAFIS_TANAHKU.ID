@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Notifikasi | Tanahku.id')
+
 @section('content')
     <div class="container">
         <h4 class="mb-4">Notifikasi</h4>

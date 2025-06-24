@@ -1,3 +1,5 @@
+<?php $__env->startSection('title', 'Dashboard | Tanahku.id'); ?>
+
 <?php $__env->startSection('content'); ?>
 <div class="container mt-4">
     <h2 class="mb-4 fw-bold text-primary">📊 Dashboard Tanahku.id</h2>

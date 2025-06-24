@@ -9,9 +9,9 @@
 
     <h5 class="mt-4">Kontak</h5>
     <ul>
-        <li>Email: support@tanahku.id</li>
-        <li>Instagram: <a href="https://instagram.com/tanahku.id" target="_blank">@tanahku.id</a></li>
-        <li>WhatsApp: +62 812-3456-7890</li>
+        <li>Email: nafisazkaalfarisi2004@mail.ugm.ac.id</li>
+        <li>Instagram: <a href="https://www.instagram.com/azkanafiss/?utm_source=ig_web_button_share_sheet" target="_blank">@azkanafiss</a></li>
+        <li>WhatsApp: 081-2268-3268</li>
     </ul>
 </div>
 @endsection

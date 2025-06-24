@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Edit Titik Lokasi | Tanahku.id')
+
 @section('styles')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>#map { width: 100%; height: 400px; }</style>

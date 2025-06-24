@@ -1,3 +1,5 @@
+<?php $__env->startSection('title', 'Edit Tanah | Tanahku.id'); ?>
+
 <?php $__env->startSection('styles'); ?>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
@@ -74,7 +76,10 @@
 
 <script>
     const map = L.map('map').setView([-7.8014, 110.3646], 14);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics',
+            maxZoom: 20
+        }).addTo(map);
 
     const drawnItems = new L.FeatureGroup().addTo(map);
 

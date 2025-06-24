@@ -106,35 +106,43 @@
         <div id="heroCarousel" class="carousel slide carousel-fade mb-5" data-bs-ride="carousel" data-bs-interval="5000">
             <div class="carousel-inner">
                 <div class="carousel-item active">
-                    <img src="https://images.unsplash.com/photo-1461175827210-5ceac3e39dd2?q=80&w=1033&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" class="d-block w-100"
-                        alt="Slide 1">
+                    <img src="https://images.unsplash.com/photo-1461175827210-5ceac3e39dd2?q=80&w=1033&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                        class="d-block w-100" alt="Slide 1">
                     <div class="hero-overlay"></div>
                     <div class="hero-text">
+                        <img src="<?php echo e(asset('images/tanahku100.png')); ?>" alt="Logo Tanahku"
+                            style="height: 80px; object-fit: contain; max-width: 80px;" class="mb-3">
                         <h1 class="display-4 fw-bold">Selamat Datang di <span class="text-warning">Tanahku.id</span></h1>
                         <p class="fs-5">Temukan dan tawarkan tanah potensial dengan cepat dan mudah melalui peta
                             interaktif.</p>
                         <a href="<?php echo e(route('map')); ?>" class="btn btn-light btn-lg mt-3">🌍 Lihat Peta Tanah</a>
                     </div>
+
                 </div>
                 <div class="carousel-item">
-                    <img src="https://plus.unsplash.com/premium_photo-1661899405263-a0bee333068e?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" class="d-block w-100"
-                        alt="Slide 2">
+                    <img src="https://plus.unsplash.com/premium_photo-1661899405263-a0bee333068e?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                        class="d-block w-100" alt="Slide 2">
                     <div class="hero-overlay"></div>
                     <div class="hero-text">
+                        <img src="<?php echo e(asset('images/tanahku100.png')); ?>" alt="Logo Tanahku" style="height: 80px; object-fit: contain; max-width: 80px;" class="mb-3">
+                            
                         <h1 class="display-4 fw-bold">Eksplorasi Tanah Impianmu</h1>
                         <p class="fs-5">Pilih lokasi strategis dengan bantuan peta digital interaktif.</p>
                         <a href="<?php echo e(route('map')); ?>" class="btn btn-light btn-lg mt-3">🔍 Telusuri Sekarang</a>
                     </div>
                 </div>
                 <div class="carousel-item">
-                    <img src="https://images.unsplash.com/photo-1737440144855-4cfa958ec63c?q=80&w=928&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" class="d-block w-100"
-                        alt="Slide 3">
+                    <img src="https://images.unsplash.com/photo-1737440144855-4cfa958ec63c?q=80&w=928&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                        class="d-block w-100" alt="Slide 3">
                     <div class="hero-overlay"></div>
                     <div class="hero-text">
+                        <img src="<?php echo e(asset('images/tanahku100.png')); ?>" alt="Logo Tanahku" style="height: 80px; object-fit: contain; max-width: 80px;" class="mb-3">
+
                         <h1 class="display-4 fw-bold">Jual Cepat & Aman</h1>
                         <p class="fs-5">Unggah tanahmu hanya dalam beberapa klik.</p>
-                        <a href="<?php echo e(route('polygons.create')); ?>" class="btn btn-warning btn-lg mt-3">+ Tambah Tanah</a>
+                        <a href="<?php echo e(route('map')); ?>" class="btn btn-warning btn-lg mt-3">+ Tambah Tanah</a>
                     </div>
+
                 </div>
             </div>
         </div>

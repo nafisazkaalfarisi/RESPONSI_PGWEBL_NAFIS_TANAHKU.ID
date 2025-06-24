@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
-@section('title', $title ?? 'Tanahku.id')
+@section('title', 'Beranda | Tanahku.id')
+
 
 @section('styles')
     <style>

@@ -11,9 +11,9 @@
     <div class="row justify-content-center mt-4">
         <div class="col-md-6">
             <ul class="list-group">
-                <li class="list-group-item"><strong>Email:</strong> info@tanahku.id</li>
-                <li class="list-group-item"><strong>Instagram:</strong> <a href="https://instagram.com/tanahku.id" target="_blank">@tanahku.id</a></li>
-                <li class="list-group-item"><strong>WhatsApp:</strong> 0812-3456-7890</li>
+                <li class="list-group-item"><strong>Email:</strong> nafisazkaalfarisi2004@mail.ugm.ac.id</li>
+                <li class="list-group-item"><strong>Instagram:</strong> <a href="https://www.instagram.com/azkanafiss/?utm_source=ig_web_button_share_sheet" target="_blank">@azkanafiss</a></li>
+                <li class="list-group-item"><strong>WhatsApp:</strong> 081-2268-3268</li>
             </ul>
         </div>
     </div>

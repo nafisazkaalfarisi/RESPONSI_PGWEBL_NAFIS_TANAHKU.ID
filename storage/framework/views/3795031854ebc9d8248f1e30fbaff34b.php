@@ -1,4 +1,5 @@
-<?php $__env->startSection('title', $title ?? 'Tanahku.id'); ?>
+<?php $__env->startSection('title', 'Beranda | Tanahku.id'); ?>
+
 
 <?php $__env->startSection('styles'); ?>
     <style>

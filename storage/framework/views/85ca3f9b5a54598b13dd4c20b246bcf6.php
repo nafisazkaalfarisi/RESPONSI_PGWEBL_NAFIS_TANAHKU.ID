@@ -1,3 +1,5 @@
+<?php $__env->startSection('title', 'Tabel Data | Tanahku.id'); ?>
+
 <?php $__env->startSection('content'); ?>
     <div class="container mt-4">
 

@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Dashboard | Tanahku.id')
+
 @section('content')
 <div class="container mt-4">
     <h2 class="mb-4 fw-bold text-primary">📊 Dashboard Tanahku.id</h2>
