@@ -2,57 +2,48 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\PointsModel;
 use Illuminate\Http\Request;
+use App\Models\PointsModel;
 use App\Models\PolygonsModel;
-use App\Models\PolylinesModel;
 
 class ApiController extends Controller
 {
+    protected $points;
+    protected $polylines;
+    protected $polygons;
+
     public function __construct()
     {
         $this->points = new PointsModel();
-        $this->polylines = new PolylinesModel();
         $this->polygons = new PolygonsModel();
-
     }
 
+    // API untuk semua point
     public function points()
     {
-        $points = $this->points->gejson_points();
-
+        $points = $this->points->geojson_points();
         return response()->json($points);
     }
 
+    // API untuk satu point berdasarkan ID
     public function point($id)
     {
-        $points = $this->points->gejson_point($id);
-
-        return response()->json($points);
+        $point = $this->points->geojson_point($id);
+        return response()->json($point);
     }
 
-    public function polylines()
-    {
-        $polylines = $this->polylines->gejson_polylines();
 
-        return response()->json($polylines);
-    }
-    public function polyline($id)
-    {
-        $polylines = $this->polylines->gejson_polyline($id);
-
-        return response()->json($polylines);
-    }
+    // API untuk semua polygon
     public function polygons()
     {
-        $polygons = $this->polygons->gejson_polygons();
-
+        $polygons = $this->polygons->geojson_polygons();
         return response()->json($polygons);
     }
+
+    // API untuk satu polygon berdasarkan ID
     public function polygon($id)
     {
-        $polygons = $this->polygons->gejson_polygon($id);
-
-        return response()->json($polygons);
+        $polygon = $this->polygons->geojson_polygon($id);
+        return response()->json($polygon);
     }
 }

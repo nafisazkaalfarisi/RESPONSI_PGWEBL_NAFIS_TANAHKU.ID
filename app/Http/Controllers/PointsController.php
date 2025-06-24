@@ -4,8 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\PointsModel;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Storage;  // For file handling
+use Illuminate\Support\Facades\Storage;
 
 class PointsController extends Controller
 {
@@ -16,181 +15,150 @@ class PointsController extends Controller
         $this->points = new PointsModel();
     }
 
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(Request $request)
+{
+    $focusPointId = $request->query('focus_point');
+    $focusPolygonId = $request->query('focus_polygon');
+
+    return view('map', [
+        'title' => 'Map',
+        'focus_point_id' => $focusPointId,
+        'focus_polygon_id' => $focusPolygonId,
+    ]);
+}
+
+
+    public function api()
     {
-        $data = [
-            'title' => 'Map',
-        ];
-        return view('map', $data);
+        $geojson = $this->points->geojson_points();
+        return response()->json($geojson);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        // You can implement this if needed.
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        // Validate request
-        $request->validate(
-            [
-                'name' => 'required|unique:points,name',
-                'description' => 'required',
-                'geom_point' => 'required',
-                'image' => 'nullable|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        $request->validate([
+            'name' => 'required|unique:points,name',
+            'description' => 'required',
+            'geom' => 'required',
+            'price' => 'required|numeric|min:0',
+            'status' => 'required|in:tersedia,terjual',
+            'contact' => 'required|string|max:255',
+            'village' => 'required|string|max:255',
+            'image' => 'nullable|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        ]);
 
-            ],
-            [
-                'name.required' => 'Name is required',
-                'name.unique' => 'Name already exists',
-                'description.required' => 'Description is required',
-                'geom_point.required' => 'Geometry point is required',
-            ]
-        );
+        $imageName = null;
+if ($request->hasFile('image')) {
+    $image = $request->file('image');
+    $imageName = time() . '_point.' . $image->getClientOriginalExtension();
 
-        // Create 'images' directory if it doesn't exist
-        if (!is_dir(public_path('storage/images'))) {
-            mkdir(public_path('storage/images'), 0777, true);
-        }
+    // Cek dan buat folder images jika belum ada
+    if (!Storage::disk('public')->exists('images')) {
+        Storage::disk('public')->makeDirectory('images');
+    }
 
-        // Handle image upload
-        if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $name_image = time() . "_point." . strtolower($image->getClientOriginalExtension());
+    // Simpan gambar ke storage/app/public/images
+    Storage::disk('public')->putFileAs('images', $image, $imageName);
+}
 
-            // Store image using Storage facade
-            $image->storeAs('images', $name_image, 'public');
-        } else {
-            $name_image = null;
-        }
 
-        // Prepare data
-        $data = [
-            'geom' => $request->geom_point,
+        $created = $this->points->create([
             'name' => $request->name,
             'description' => $request->description,
-            'image' => $name_image,
-            'user_id' => auth()->user()->id,
-        ];
+            'geom' => $request->geom,
+            'image' => $imageName,
+            'price' => $request->price,
+            'status' => $request->status,
+            'contact' => $request->contact,
+            'village' => $request->village,
+            'user_id' => auth()->id(),
+        ]);
 
-        //Create Data
-        if (!$this->points->create($data)) {
-            return redirect()->route('map')->with('error', 'Point failed to add');
-        }
+        return redirect()->route('map', ['focus_point' => $created->id])
+    ->with('success', 'Titik tanah berhasil ditambahkan');
 
-        //Redirect to Map
-        return redirect()->route('map')->with('success', 'Point has been added');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        // You can implement this if needed.
+     public function edit(string $id)
+{
+    $point = $this->points->findOrFail($id);
+
+    // Ambil koordinat dari kolom geom (format GeoJSON)
+    $geojson = \DB::table('points')
+        ->selectRaw("ST_AsGeoJSON(geom) as geom")
+        ->where('id', $id)
+        ->first();
+
+    $coords = json_decode($geojson->geom)->coordinates;
+    $lat = $coords[1];
+    $lng = $coords[0];
+
+    return view('edit-point', [
+        'title' => 'Edit Titik Tanah',
+        'point' => $point,
+        'lat' => $lat,
+        'lng' => $lng
+    ]);
+}
+
+public function update(Request $request, string $id)
+{
+    $request->validate([
+        'name' => 'required|unique:points,name,' . $id,
+        'description' => 'required',
+        'geom' => 'required',
+        'price' => 'required|numeric|min:0',
+        'status' => 'required|in:tersedia,terjual',
+        'contact' => 'required|string|max:255',
+        'village' => 'required|string|max:255',
+        'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:10000',
+    ]);
+
+    $point = $this->points->findOrFail($id);
+    $imageName = $point->image;
+
+    if ($request->hasFile('image')) {
+        $image = $request->file('image');
+        $imageName = time() . '_point.' . $image->getClientOriginalExtension();
+
+        if (!Storage::disk('public')->exists('images')) {
+            Storage::disk('public')->makeDirectory('images');
+        }
+
+        Storage::disk('public')->putFileAs('images', $image, $imageName);
+
+        if ($point->image && Storage::disk('public')->exists('images/' . $point->image)) {
+            Storage::disk('public')->delete('images/' . $point->image);
+        }
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        $data = [
-            'title' => 'Edit Point',
-            'id' => $id,
-        ];
-        return view('edit-point', $data);
-    }
+    $point->update([
+        'name' => $request->name,
+        'description' => $request->description,
+        'geom' => $request->geom, // Disamakan dengan form tambah
+        'image' => $imageName,
+        'price' => $request->price,
+        'status' => $request->status,
+        'contact' => $request->contact,
+        'village' => $request->village,
+    ]);
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
+    return redirect()->route('map', ['focus_point' => $id])
+    ->with('success', 'Titik tanah berhasil diperbarui');
+
+}
 
 
-        //Validate request
-        $request->validate(
-            [
-                'name' => 'required|unique:points,name,' . $id,
-                'description' => 'required',
-                'geom_point' => 'required',
-                'image'=> 'nullable|mimes:jpeg,png,jpg,gif,svg|max:10000',
-            ],
-            [
-                'name.required' => 'Name is required',
-                'name.unique' => 'Name already exist',
-                'description.required' => 'Description is required',
-                'geom_point.required' => 'Geometry point is required',
-            ]
-        );
-
-        //Create Images directory if not exist
-        if (!is_dir(public_path('storage/images'))) {
-            mkdir(public_path('storage/images'), 0777, true);
-        }
-
-        //Get old image file
-        $old_image = $this->points->find($id)->image;
-
-        //Get image file
-        if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $name_image = time() . "_point." . strtolower($image->getClientOriginalExtension());
-            $image->storeAs('images', $name_image, 'public');
-
-        // Delete old image file
-        if ($old_image != null) {
-            if (File::exists('./storage/images/' . $old_image)) {
-                unlink('./storage/images/' . $old_image);
-            }
-        }
-        } else {
-            $name_image = $old_image;
-        }
-
-        $data = [
-            'geom' => $request->geom_point,
-            'name' => $request->name,
-            'description' => $request->description,
-            'image' =>$name_image,
-        ];
-
-        //Create Data
-        if (!$this->points->find($id)->update($data)) {
-            return redirect()->route('map')->with('error', 'Point failed to update');
-        }
-
-        //Redirect to Map
-        return redirect()->route('map')->with('success', 'Point has been updated');
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
-        $imagefile = $this->points->find($id)->image;
+        $point = $this->points->findOrFail($id);
 
-        if (!$this->points->destroy($id)) {
-            return redirect()->route('map')->with('error', 'Point failed to delete');
+        if ($point->image && Storage::disk('public')->exists('images/' . $point->image)) {
+            Storage::disk('public')->delete('images/' . $point->image);
         }
 
-        // Delete image file
-        if($imagefile != null){
-            if (File::exists('./storage/images/' . $imagefile)) {
-                unlink('./storage/images/' . $imagefile);
-            }
-        }
-        return redirect()->route('map')->with('success', 'Point has been deleted');
+        $point->delete();
+
+        return redirect()->route('map')->with('success', 'Titik tanah berhasil dihapus');
     }
 }

@@ -1,171 +1,148 @@
-@extends('layout.template')
+@extends('layouts.app')
+
 @section('styles')
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css">
-
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     <style>
         #map {
             width: 100%;
-            height: calc(100vh - 56px);
+            height: 400px;
         }
     </style>
 @endsection
 
 @section('content')
-    <div id="map"></div>
+<div class="container mt-3">
+    <h4>Edit Data Tanah (Polygon)</h4>
 
-    <!-- Modal Edit Polygon-->
-    <div class="modal fade" id="editPolygonModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="exampleModalLabel">Edit Polygon</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form method="POST" action="{{ route('polygons.update', $id) }}" enctype="multipart/form-data">
-                    <div class="modal-body">
-                        @csrf
-                        @method('PATCH')
-                        <div class="mb-3">
-                            <label for="name" class="form-label">Name</label>
-                            <input type="text" class="form-control" id="name" name="name"
-                                placeholder="Fill polygon name">
-                        </div>
+    <div id="map" class="rounded mb-4 shadow"></div>
 
-                        <div class="mb-3">
-                            <label for="description" class="form-label">Description</label>
-                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
-                        </div>
+    <form method="POST" action="{{ route('polygons.update', $id) }}" enctype="multipart/form-data" id="edit-form">
+        @csrf
+        @method('PATCH')
 
-                        <div class="mb-3">
-                            <label for="geom_polygon" class="form-label">Geometry</label>
-                            <textarea class="form-control" id="geom_polygon" name="geom_polygon" rows="3"></textarea>
-                        </div>
-
-                    </div>
-                    <div class="mb-3">
-                        <label for="image" class="form-label">Photo</label>
-                        <input type="file" class="form-control" id="image_polygon" name="image"
-                            onchange="document.getElementById('preview-image-polygon').src = window.URL.
-                        createObjectURL(this.files[0])">
-                        <img src="" alt="" id="preview-image-po" class="img-thumbnail" width="400">
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-primary">Save</button>
-                    </div>
-                </form>
-            </div>
+        <div class="mb-3">
+            <label>Nama</label>
+            <input type="text" name="name" id="name" class="form-control" required>
         </div>
-    </div>
+
+        <div class="mb-3">
+            <label>Deskripsi</label>
+            <textarea name="description" id="description" class="form-control" required></textarea>
+        </div>
+
+        <div class="mb-3">
+            <label>Sertifikat</label>
+            <input type="text" name="certificate" id="certificate" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label>Penggunaan Lahan</label>
+            <input type="text" name="land_use" id="land_use" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label>Akses Jalan</label>
+            <input type="text" name="road_access" id="road_access" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label>Kecamatan</label>
+            <input type="text" name="district" id="district" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label>Geometri (WKT)</label>
+            <textarea name="geom_polygon" id="geom_polygon" class="form-control" readonly required></textarea>
+        </div>
+
+        <div class="mb-3">
+            <label>Foto Lama</label><br>
+            <img src="" id="preview-image" class="img-thumbnail mb-2" width="300">
+            <input type="file" name="image" class="form-control mt-2" accept="image/*" onchange="previewImage(event)">
+        </div>
+
+        <button type="submit" class="btn btn-success">Simpan Perubahan</button>
+        <a href="{{ route('map') }}" class="btn btn-secondary">Batal</a>
+    </form>
+</div>
 @endsection
 
 @section('scripts')
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://unpkg.com/@terraformer/wkt"></script>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
-
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-
-    <script src="https://unpkg.com/@terraformer/wkt"></script>
-
-    <script>
-        var map = L.map('map').setView([41.3809, 2.1228], 16); // Koordinat Camp Nou, Barcelona
-
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+<script>
+    const map = L.map('map').setView([-7.8014, 110.3646], 14);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics',
+            maxZoom: 20
         }).addTo(map);
 
+    const drawnItems = new L.FeatureGroup().addTo(map);
 
+    const drawControl = new L.Control.Draw({
+        draw: false,
+        edit: {
+            featureGroup: drawnItems,
+            edit: true
+        }
+    });
+    map.addControl(drawControl);
 
-        /* Digitize Function */
-        var drawnItems = new L.FeatureGroup();
-        map.addLayer(drawnItems);
+    let editableLayer = null; // << tangkap layer yang akan diedit
 
-        var drawControl = new L.Control.Draw({
-            draw: false,
-            edit: {
-                featureGroup: drawnItems,
-                edit: true,
-                remove: false
+    $.getJSON("{{ route('api.polygons') }}", function(data) {
+        const layer = L.geoJSON(data, {
+            onEachFeature: function(feature, layer) {
+                if (feature.properties.id == {{ $id }}) {
+                    drawnItems.addLayer(layer);
+                    map.fitBounds(layer.getBounds());
+
+                    editableLayer = layer;
+
+                    // Isi form
+                    $('#name').val(feature.properties.name);
+                    $('#description').val(feature.properties.description);
+                    $('#certificate').val(feature.properties.certificate);
+                    $('#land_use').val(feature.properties.land_use);
+                    $('#road_access').val(feature.properties.road_access);
+                    $('#district').val(feature.properties.district);
+                    $('#geom_polygon').val(Terraformer.geojsonToWKT(feature.geometry));
+
+                    if (feature.properties.image) {
+                        $('#preview-image').attr('src', feature.properties.image_url);
+                    }
+                }
             }
         });
+    });
 
-        map.addControl(drawControl);
-
-        map.on('draw:edited', function(e) {
-            var layers = e.layers;
-
-            layers.eachLayer(function(layer) {
-                var drawnJSONObject = layer.toGeoJSON();
-                console.log(drawnJSONObject);
-
-                var objectGeometry = Terraformer.geojsonToWKT(drawnJSONObject.geometry);
-                console.log(objectGeometry);
-
-                // layer properties
-                var properties = drawnJSONObject.properties;
-                console.log(properties);
-
-                drawnItems.addLayer(layer);
-
-                //menampilkan data ke dalam modal
-                $('#name').val(properties.name);
-                $('#description').val(properties.description);
-                $('#geom_polygon').val(objectGeometry);
-                $('#preview-image-polygon').attr('src', "{{ asset('storage/images') }}/" + properties.image);
-
-                //menampilkan moda edit
-                $('#editPolygonModal').modal('show');
-            });
+    map.on('draw:edited', function (e) {
+        e.layers.eachLayer(function (layer) {
+            const geom = Terraformer.geojsonToWKT(layer.toGeoJSON().geometry);
+            $('#geom_polygon').val(geom);
+            editableLayer = layer; // update layer hasil edit
         });
+    });
 
+    // Tangkap submit form dan update geom_polygon terakhir
+    $('#edit-form').on('submit', function () {
+        if (editableLayer) {
+            const updatedWKT = Terraformer.geojsonToWKT(editableLayer.toGeoJSON().geometry);
+            $('#geom_polygon').val(updatedWKT);
+        }
+    });
 
-        /* GeoJSON Polygon */
-        var polygon = L.geoJson(null, {
-
-            style: function(feature) {
-                return {
-                    color: "green",
-                    weight: 2,
-                    opacity: 1,
-                    fillOpacity: 0.5
-                };
-            },
-            onEachFeature: function(feature, layer) {
-                //memasukkan layer point ke dalam drawnItems
-
-                drawnItems.addLayer(layer);
-
-                var properties = feature.properties;
-                var objectGeometry = Terraformer.geojsonToWKT(feature.geometry);
-
-                layer.on({
-                    click: function(e) {
-                        //menampilkan data ke dalam modal
-                        $('#name').val(properties.name);
-                        $('#description').val(properties.description);
-                        $('#geom_polygon').val(objectGeometry);
-                        $('#preview-image-polygon').attr('src', "{{ asset('storage/images') }}/" +
-                            properties.image);
-
-                        //menampilkan moda edit
-                        $('#editPolygonModal').modal('show');
-                    },
-                });
-            },
-
-        });
-
-        $.getJSON("{{ route('api.polygon', $id) }}", function(data) {
-            polygon.addData(data);
-            map.addLayer(polygon);
-            map.fitBounds(polygon.getBounds(), {
-            padding: [100, 100]
-            });
-        });
-    </script>
+    function previewImage(event) {
+        const image = event.target.files[0];
+        const preview = document.getElementById('preview-image');
+        if (image) {
+            preview.src = URL.createObjectURL(image);
+            preview.style.display = 'block';
+        }
+    }
+</script>
 @endsection

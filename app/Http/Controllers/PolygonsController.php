@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\PolygonsModel;
-use App\Models\Polygons;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Storage; // For file handling
+use Illuminate\Support\Facades\Storage;
+use App\Models\User;
+use App\Notifications\PolygonAdded;
 
 class PolygonsController extends Controller
 {
@@ -14,162 +16,212 @@ class PolygonsController extends Controller
 
     public function __construct()
     {
-        $this->polygons = new PolygonsModel(); // Ensure model name matches
+        $this->polygons = new PolygonsModel();
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    public function api()
+    {
+        $polygons = DB::table('polygons')
+    ->leftJoin('users', 'polygons.user_id', '=', 'users.id')
+    ->select(
+        'polygons.id',
+        'polygons.name',
+        'polygons.description',
+        'polygons.certificate',
+        'polygons.land_use',
+        'polygons.road_access',
+        'polygons.regency',
+        'polygons.district',
+        'polygons.image',
+        DB::raw('ST_AsGeoJSON(polygons.geom) as geometry'),
+        DB::raw('ST_Area(polygons.geom, true) / 10000 as area_hektar'),
+        'users.name as user_name'
+    )
+    ->get();
+
+
+        $features = [];
+
+        foreach ($polygons as $polygon) {
+            $features[] = [
+                'type' => 'Feature',
+                'geometry' => json_decode($polygon->geometry),
+                'properties' => [
+                    'id' => $polygon->id,
+                    'name' => $polygon->name,
+                    'certificate' => $polygon->certificate,
+                    'land_use' => $polygon->land_use,
+                    'road_access' => $polygon->road_access,
+                    'regency' => $polygon->regency,
+    'district' => $polygon->district,
+                    'image' => $polygon->image,
+                    'image_url' => $polygon->image ? asset('storage/images/' . $polygon->image) : null,
+                    'area_hektar' => round($polygon->area_hektar, 2),
+                    'user_name' => $polygon->user_name,
+                ]
+            ];
+        }
+
+        return response()->json([
+            'type' => 'FeatureCollection',
+            'features' => $features
+        ]);
+    }
+
     public function store(Request $request)
-    {
-        // Validate request
-        $request->validate(
-            [
-                'name' => 'required|unique:polygons,name',
-                'description' => 'required',
-                'geom_polygon' => 'required',
-                'image' => 'nullable|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            ],
-            [
-                'name.required' => 'Name is required',
-                'name.unique' => 'Name already exists',
-                'description.required' => 'Description is required',
-                'geom_polygon.required' => 'Geometry polygon is required',
-            ]
-        );
+{
+    $request->validate([
+        'name' => 'required|unique:polygons,name',
+        'description' => 'required',
+        'certificate' => 'required',
+        'land_use' => 'required',
+        'road_access' => 'required',
+        'regency' => 'required',
+    'district' => 'required',
+        'geom_polygon' => 'required',
+        'image' => 'nullable|mimes:jpeg,png,jpg,gif,svg|max:2048',
+    ]);
 
-        // Create 'images' directory if it doesn't exist
-        if (!is_dir(public_path('storage/images'))) {
-            mkdir(public_path('storage/images'), 0777, true);
-        }
+    $name_image = $this->handleImageUpload($request->file('image'));
 
-        // Handle image upload
-        if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $name_image = time() . "_polygon." . strtolower($image->getClientOriginalExtension());
+    $data = [
+        'geom' => DB::raw("ST_GeomFromText('" . $request->geom_polygon . "', 4326)"),
+        'name' => $request->name,
+        'description' => $request->description,
+        'certificate' => $request->certificate,
+        'land_use' => $request->land_use,
+        'road_access' => $request->road_access,
+        'regency' => $request->regency,
+    'district' => $request->district,
+        'image' => $name_image,
+        'user_id' => auth()->id(),
+    ];
 
-            // Store image using Storage facade
-            $image->storeAs('images', $name_image, 'public');
-        } else {
-            $name_image = null;
-        }
+    $created = $this->polygons->create($data);
 
-        // Prepare data for insertion
-        $data = [
-            'geom' => $request->geom_polygon,
-            'name' => $request->name,
-            'description' => $request->description,
-            'image' => $name_image,
-            'user_id' => auth()->user()->id,
-        ];
-
-        //Create Data
-        if (!$this->polygons->create($data)) {
-            return redirect()->route('map')->with('error', 'Polygon failed to update');
-        }
-
-        //Redirect to Map
-        return redirect()->route('map')->with('success', 'Polygon has been updated');
-
+    if (!$created) {
+        return redirect()->route('map')->with('error', 'Polygon failed to add');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    // Kirim notifikasi ke semua user
+$users = User::all();
+foreach ($users as $user) {
+    $user->notify(new PolygonAdded($created));
+}
+
+    return redirect()->route('map', ['focus_polygon' => $created->id])
+        ->with('success', 'Polygon tanah berhasil ditambahkan');
+}
+
+
+    public function index(Request $request)
+{
+    $focusPointId = $request->query('focus_point');
+    $focusPolygonId = $request->query('focus_polygon');
+
+    return view('map', [
+        'title' => 'Map',
+        'focus_point_id' => $focusPointId,
+        'focus_polygon_id' => $focusPolygonId,
+    ]);
+}
+
+
+    public function show($id)
     {
-        // Implement this if needed
+        $polygon = DB::table('polygons')
+            ->select('id', 'name', 'description', 'image', DB::raw("ST_AsGeoJSON(geom) as geojson"))
+            ->where('id', $id)
+            ->first();
+
+        return view('polygons.show', compact('polygon'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(string $id)
     {
-        $data = [
+        return view('edit-polygon', [
             'title' => 'Edit Polygon',
             'id' => $id,
-        ];
-        return view('edit-polygon', $data);
+        ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
-        $request->validate(
-            [
-                'name' => 'required|unique:polygons,name,' . $id,
-                'description' => 'required',
-                'geom_polygon' => 'required',
-                'image'=> 'nullable|mimes:jpeg,png,jpg,gif,svg|max:10000',
-            ],
-            [
-                'name.required' => 'Name is required',
-                'name.unique' => 'Name already exist',
-                'description.required' => 'Description is required',
-                'geom_polygon.required' => 'Geometry polygon is required',
-            ]
-        );
+        $request->validate([
+            'name' => 'required|unique:polygons,name,' . $id,
+            'description' => 'required',
+            'certificate' => 'required',
+            'land_use' => 'required',
+            'road_access' => 'required',
+            'regency' => 'required',
+    'district' => 'required',
+            'geom_polygon' => 'required',
+            'image' => 'nullable|mimes:jpeg,png,jpg,gif,svg|max:10000',
+        ]);
 
-        //Create Images directory if not exist
-        if (!is_dir(public_path('storage/images'))) {
-            mkdir(public_path('storage/images'), 0777, true);
-        }
+        $polygon = $this->polygons->findOrFail($id);
+        $old_image = $polygon->image;
 
-        //Get old image file
-        $old_image = $this->polygons->find($id)->image;
-
-        //Get image file
-        if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $name_image = time() . "_polygon." . strtolower($image->getClientOriginalExtension());
-            $image->storeAs('images', $name_image, 'public');
-
-        // Delete old image file
-        if ($old_image != null) {
-            if (File::exists('./storage/images/' . $old_image)) {
-                unlink('./storage/images/' . $old_image);
-            }
-        }
-        } else {
-            $name_image = $old_image;
-        }
+        $name_image = $this->handleImageUpload($request->file('image'), $old_image);
 
         $data = [
-            'geom' => $request->geom_polygon,
+            'geom' => DB::raw("ST_GeomFromText('" . $request->geom_polygon . "', 4326)"),
             'name' => $request->name,
             'description' => $request->description,
-            'image' =>$name_image,
+            'certificate' => $request->certificate,
+            'land_use' => $request->land_use,
+            'road_access' => $request->road_access,
+            'regency' => $request->regency,
+    'district' => $request->district,
+            'image' => $name_image,
         ];
 
-        //Create Data
-        if (!$this->polygons->find($id)->update($data)) {
+        $updated = DB::table('polygons')->where('id', $id)->update($data);
+
+        if (!$updated) {
             return redirect()->route('map')->with('error', 'Polygon failed to update');
         }
 
-        //Redirect to Map
-        return redirect()->route('map')->with('success', 'Polygon has been updated');
+        return redirect()->route('map', ['focus_polygon' => $id])
+    ->with('success', 'Polygon tanah berhasil diperbarui');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
-        $imagefile = $this->polygons->find($id)->image;
+        $polygon = $this->polygons->findOrFail($id);
+        $imagefile = $polygon->image;
 
-        if (!$this->polygons->destroy($id)) {
+        if (!$polygon->delete()) {
             return redirect()->route('map')->with('error', 'Polygon failed to delete');
         }
 
-        // Delete image file
-        if($imagefile != null){
-            if (File::exists('./storage/images/' . $imagefile)) {
-                unlink('./storage/images/' . $imagefile);
-            }
+        if ($imagefile && File::exists(public_path('storage/images/' . $imagefile))) {
+            unlink(public_path('storage/images/' . $imagefile));
         }
+
         return redirect()->route('map')->with('success', 'Polygon has been deleted');
+    }
+
+    /**
+     * Handle image upload and delete old image if provided.
+     */
+    private function handleImageUpload($image, $oldImage = null)
+    {
+        if ($image) {
+            if (!Storage::disk('public')->exists('images')) {
+                Storage::disk('public')->makeDirectory('images');
+            }
+
+            $filename = time() . "_polygon." . strtolower($image->getClientOriginalExtension());
+            $image->storeAs('images', $filename, 'public');
+
+            if ($oldImage && File::exists(public_path('storage/images/' . $oldImage))) {
+                unlink(public_path('storage/images/' . $oldImage));
+            }
+
+            return $filename;
+        }
+
+        return $oldImage;
     }
 }
